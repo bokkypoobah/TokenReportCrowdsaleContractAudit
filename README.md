@@ -4,7 +4,7 @@
 
 ## Summary
 
-[Token Report](http://tokenreport.com/) intends to run a [crowdsale](http://tokenreport.com/ico.html) commencing on September 12 2017.
+[Token Report](http://tokenreport.com/) intends to run a [crowdsale](http://tokenreport.com/ico.html) commencing in October 2017.
 
 Token Report's white paper can be found [here](http://tokenreport.com/assets/white-paper.pdf).
 
