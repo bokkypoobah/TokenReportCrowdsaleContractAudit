@@ -19,3 +19,39 @@ The source code for the audit are:
 * [Token](contracts/Token.sol) from [0xc931eac3b736f3a956b2973ddb4128c36c5c7add](https://etherscan.io/address/0xc931eac3b736f3a956b2973ddb4128c36c5c7add#code).
 
 Note that the Ledger, Controller and Token contracts are included in each of the source file above.
+
+<br />
+
+<hr />
+
+## Table Of Contents
+
+* [Summary](#summary)
+* [Testing](#testing)
+* [Code Review](#code-review)
+
+<br />
+
+<hr />
+
+## Testing
+
+
+<br />
+
+<hr />
+
+## Code Review
+
+* [ ] [code-review/Token.md](code-review/Token.md)
+  * [x] contract SafeMath 
+  * [x] contract Owned 
+  * [x] contract Pausable is Owned 
+  * [x] contract Finalizable is Owned 
+  * [x] contract IToken 
+  * [x] contract TokenReceivable is Owned 
+  * [x] contract EventDefinitions 
+  * [ ] contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Pausable 
+  * [ ] contract Controller is Owned, Finalizable 
+  * [ ] contract Ledger is Owned, SafeMath, Finalizable 
+
