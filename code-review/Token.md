@@ -207,6 +207,9 @@ contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Paus
         return controller.allowance(_owner, _spender);
     }
 
+    // BK NOTE - There is a payload size check with >=
+    // BK NOTE - 0 values are not allowed
+    // BK NOTE - This function will return false instead of throwing
     // BK Ok
     function transfer(address _to, uint _value) onlyPayloadSize(2) notPaused returns (bool success) {
         // BK Ok
@@ -220,14 +223,23 @@ contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Paus
         return false;
     }
 
+    // BK NOTE - There is a payload size check with >=
+    // BK NOTE - 0 values are not allowed
+    // BK NOTE - This function will return false instead of throwing
+    // BK Ok
     function transferFrom(address _from, address _to, uint _value) onlyPayloadSize(3) notPaused returns (bool success) {
+        // BK Ok
         if (controller.transferFrom(msg.sender, _from, _to, _value)) {
+            // BK Ok - Log event
             Transfer(_from, _to, _value);
+            // BK Ok
             return true;
         }
+        // BK Ok
         return false;
     }
 
+    // BK NOTE - There is a payload size check with >=
     function approve(address _spender, uint _value) onlyPayloadSize(2) notPaused returns (bool success) {
         // promote safe user behavior
         if (controller.approve(msg.sender, _spender, _value)) {
@@ -237,6 +249,7 @@ contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Paus
         return false;
     }
 
+    // BK NOTE - There is a payload size check with >=
     function increaseApproval (address _spender, uint _addedValue) onlyPayloadSize(2) notPaused returns (bool success) {
         if (controller.increaseApproval(msg.sender, _spender, _addedValue)) {
             uint newval = controller.allowance(msg.sender, _spender);
@@ -246,6 +259,7 @@ contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Paus
         return false;
     }
 
+    // BK NOTE - There is a payload size check with >=
     function decreaseApproval (address _spender, uint _subtractedValue) onlyPayloadSize(2) notPaused returns (bool success) {
         if (controller.decreaseApproval(msg.sender, _spender, _subtractedValue)) {
             uint newval = controller.allowance(msg.sender, _spender);
@@ -255,20 +269,30 @@ contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Paus
         return false;
     }
 
+    // BK NOTE - Payload size check with >=
+    // BK Ok
     modifier onlyPayloadSize(uint numwords) {
+        // BK Ok
         assert(msg.data.length >= numwords * 32 + 4);
+        // BK Ok
         _;
     }
 
+    // BK Ok - User can burn their own tokens when not paused
     function burn(uint _amount) notPaused {
+        // BK Ok
         controller.burn(msg.sender, _amount);
+        // BK Ok - Log event
         Transfer(msg.sender, 0x0, _amount);
     }
 
     // functions below this line are onlyController
 
+    // BK Ok
     modifier onlyController() {
+        // BK Ok
         assert(msg.sender == address(controller));
+        // BK Ok
         _;
     }
 
@@ -276,11 +300,15 @@ contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Paus
     // heads, allow the controller to reconstitute the transfer and
     // approval history.
 
+    // BK Ok - Only controller can execute this function
     function controllerTransfer(address _from, address _to, uint _value) onlyController {
+        // BK Ok - Log event
         Transfer(_from, _to, _value);
     }
 
+    // BK Ok - Only controller can execute this function
     function controllerApprove(address _owner, address _spender, uint _value) onlyController {
+        // BK Ok - Log event
         Approval(_owner, _spender, _value);
     }
 }
@@ -327,19 +355,19 @@ contract Controller is Owned, Finalizable {
 
     // public functions
 
-    // BK Ok
+    // BK Ok - Constant function
     function totalSupply() constant returns (uint) {
         // BK Ok
         return ledger.totalSupply();
     }
 
-    // BK Ok
+    // BK Ok - Constant function
     function balanceOf(address _a) constant returns (uint) {
         // BK Ok
         return ledger.balanceOf(_a);
     }
 
-    // BK Ok
+    // BK Ok - Constant function
     function allowance(address _owner, address _spender) constant returns (uint) {
         // BK Ok
         return ledger.allowance(_owner, _spender);
@@ -362,7 +390,9 @@ contract Controller is Owned, Finalizable {
         return ledger.transfer(_from, _to, _value);
     }
 
+    // BK Ok - Only token contract can execute this function
     function transferFrom(address _spender, address _from, address _to, uint _value) onlyToken returns (bool success) {
+        // BK Ok
         return ledger.transferFrom(_spender, _from, _to, _value);
     }
 
@@ -378,7 +408,9 @@ contract Controller is Owned, Finalizable {
         return ledger.decreaseApproval(_owner, _spender, _subtractedValue);
     }
 
+    // BK Ok - Only token contract can execute this function
     function burn(address _owner, uint _amount) onlyToken {
+        // BK Ok
         ledger.burn(_owner, _amount);
     }
 }
@@ -449,9 +481,12 @@ contract Ledger is Owned, SafeMath, Finalizable {
         return true;
     }
 
+    // BK Ok - Only controller can execute this function
     function transferFrom(address _spender, address _from, address _to, uint _value) onlyController returns (bool success) {
+        // BK Ok - 
         if (balanceOf[_from] < _value) return false;
 
+        // BK Ok
         var allowed = allowance[_from][_spender];
         if (allowed < _value) return false;
 
@@ -487,8 +522,11 @@ contract Ledger is Owned, SafeMath, Finalizable {
         return true;
     }
 
+    // BK Ok - Only controller can execute this function
     function burn(address _owner, uint _amount) onlyController {
+        // BK Ok
         balanceOf[_owner] = safeSub(balanceOf[_owner], _amount);
+        // BK Ok
         totalSupply = safeSub(totalSupply, _amount);
     }
 }

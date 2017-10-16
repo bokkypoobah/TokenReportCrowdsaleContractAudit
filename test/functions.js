@@ -16,6 +16,7 @@ addAccount(eth.accounts[5], "Account #5");
 addAccount(eth.accounts[6], "Account #6");
 addAccount(eth.accounts[7], "Account #7");
 addAccount(eth.accounts[8], "Account #8");
+addAccount(eth.accounts[9], "Account #9");
 
 
 var minerAccount = eth.accounts[0];
@@ -27,6 +28,7 @@ var account5 = eth.accounts[5];
 var account6 = eth.accounts[6];
 var account7 = eth.accounts[7];
 var account8 = eth.accounts[8];
+var account9 = eth.accounts[9];
 
 
 var baseBlock = eth.blockNumber;
@@ -125,6 +127,28 @@ function assertEtherBalance(account, expectedBalance) {
     console.log("RESULT: OK " + account + " has expected balance " + expectedBalance);
   } else {
     console.log("RESULT: FAILURE " + account + " has balance " + etherBalance + " <> expected " + expectedBalance);
+  }
+}
+
+function failIfTxStatusError(tx, msg) {
+  var status = eth.getTransactionReceipt(tx).status;
+  if (status == 0) {
+    console.log("RESULT: FAIL " + msg);
+    return 0;
+  } else {
+    console.log("RESULT: PASS " + msg);
+    return 1;
+  }
+}
+
+function passIfTxStatusError(tx, msg) {
+  var status = eth.getTransactionReceipt(tx).status;
+  if (status == 1) {
+    console.log("RESULT: FAIL " + msg);
+    return 0;
+  } else {
+    console.log("RESULT: PASS " + msg);
+    return 1;
   }
 }
 

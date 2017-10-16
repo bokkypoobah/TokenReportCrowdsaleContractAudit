@@ -27,8 +27,21 @@ Note that the Ledger, Controller and Token contracts are included in each of the
 ## Table Of Contents
 
 * [Summary](#summary)
+* [Notes](#notes)
 * [Testing](#testing)
 * [Code Review](#code-review)
+
+<br />
+
+<hr />
+
+## Notes
+
+* In *Token*, `transfer(...)`, `transferFrom(...)` and `approve(...)` have the `onlyPayloadSize(...)` check. This check was found to be
+  ineffective and newly deployed token contracts generally do not include this check. See
+  [Smart Contract Short Address Attack Mitigation Failure](https://blog.coinfabrik.com/smart-contract-short-address-attack-mitigation-failure/)
+  for further information. The implementation in the *Token* contract has the check for the payload being greater than or equals to a specified
+  number (`>=`) instead of being exactly equals to a specified number (`==`) and should not cause any technical issues if left in the code
 
 <br />
 

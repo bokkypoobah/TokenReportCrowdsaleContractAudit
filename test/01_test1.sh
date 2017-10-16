@@ -60,6 +60,7 @@ DIFFS1=`diff $CONTRACTSDIR/$TOKENSOL $TOKENSOL`
 echo "--- Differences $CONTRACTSDIR/$TOKENSOL $TOKENSOL ---" | tee -a $TEST1OUTPUT
 echo "$DIFFS1" | tee -a $TEST1OUTPUT
 
+solc_0.4.16 --version | tee -a $TEST1OUTPUT
 echo "var tokenOutput=`solc_0.4.16 --optimize --combined-json abi,bin,interface $TOKENSOL`;" > $TOKENJS
 
 
@@ -163,19 +164,19 @@ while (txpool.status.pending > 0) {
 
 printTxData("controllerAddress=" + controllerAddress, controllerTx);
 printBalances();
-failIfGasEqualsGasUsed(controllerTx, controllerMessage);
+failIfTxStatusError(controllerTx, controllerMessage);
 printControllerContractDetails();
 console.log("RESULT: ");
 
 printTxData("ledgerAddress=" + ledgerAddress, ledgerTx);
 printBalances();
-failIfGasEqualsGasUsed(ledgerTx, ledgerMessage);
+failIfTxStatusError(ledgerTx, ledgerMessage);
 printLedgerContractDetails();
 console.log("RESULT: ");
 
 printTxData("tokenAddress=" + tokenAddress, tokenTx);
 printBalances();
-failIfGasEqualsGasUsed(tokenTx, tokenMessage);
+failIfTxStatusError(tokenTx, tokenMessage);
 printTokenContractDetails();
 console.log("RESULT: ");
 
@@ -199,11 +200,11 @@ printTxData("stitchContracts3Tx", stitchContracts3Tx);
 printTxData("stitchContracts4Tx", stitchContracts4Tx);
 // printTxData("stitchContracts5Tx", stitchContracts5Tx);
 printBalances();
-failIfGasEqualsGasUsed(stitchContracts1Tx, stitchContractsMessage + " - controller.setToken(...)");
-failIfGasEqualsGasUsed(stitchContracts2Tx, stitchContractsMessage + " - controller.setLedger(...)");
-failIfGasEqualsGasUsed(stitchContracts3Tx, stitchContractsMessage + " - token.setController(...)");
-failIfGasEqualsGasUsed(stitchContracts4Tx, stitchContractsMessage + " - ledger.setController(...)");
-// failIfGasEqualsGasUsed(stitchContracts5Tx, stitchContractsMessage + " - controller.setBurnAddress(...)");
+failIfTxStatusError(stitchContracts1Tx, stitchContractsMessage + " - controller.setToken(...)");
+failIfTxStatusError(stitchContracts2Tx, stitchContractsMessage + " - controller.setLedger(...)");
+failIfTxStatusError(stitchContracts3Tx, stitchContractsMessage + " - token.setController(...)");
+failIfTxStatusError(stitchContracts4Tx, stitchContractsMessage + " - ledger.setController(...)");
+// failIfTxStatusError(stitchContracts5Tx, stitchContractsMessage + " - controller.setBurnAddress(...)");
 printControllerContractDetails();
 printLedgerContractDetails();
 printTokenContractDetails();
@@ -223,14 +224,27 @@ while (txpool.status.pending > 0) {
 }
 printTxData("mint1Tx", mint1Tx);
 printBalances();
-failIfGasEqualsGasUsed(mint1Tx, mintMessage + " - ac3 + ac4 11111111.11111111 tokens");
+failIfTxStatusError(mint1Tx, mintMessage + " - ac3 + ac4 11111111.11111111 tokens");
 printControllerContractDetails();
 printLedgerContractDetails();
 printTokenContractDetails();
 console.log("RESULT: ");
 
 
-exit;
+// -----------------------------------------------------------------------------
+var mintingStoppedMessage = "Minting Stopped";
+// -----------------------------------------------------------------------------
+console.log("RESULT: " + mintingStoppedMessage);
+var mintingStopped1Tx = ledger.stopMinting({from: contractOwnerAccount, gas: 400000});
+while (txpool.status.pending > 0) {
+}
+printTxData("mintingStopped1Tx", mintingStopped1Tx);
+printBalances();
+failIfTxStatusError(mintingStopped1Tx, mintingStoppedMessage);
+printControllerContractDetails();
+printLedgerContractDetails();
+printTokenContractDetails();
+console.log("RESULT: ");
 
 
 // -----------------------------------------------------------------------------
@@ -248,246 +262,62 @@ printTxData("transfer1Tx", transfer1Tx);
 printTxData("transfer2Tx", transfer2Tx);
 printTxData("transfer3Tx", transfer3Tx);
 printBalances();
-failIfGasEqualsGasUsed(transfer1Tx, transferMessage + " - transfer 0.000001 tokens ac3 -> ac6. CHECK for movement");
-failIfGasEqualsGasUsed(transfer2Tx, transferMessage + " - approve 0.03 tokens ac4 -> ac5");
-failIfGasEqualsGasUsed(transfer3Tx, transferMessage + " - transferFrom 0.03 tokens ac4 -> ac7 by ac5. CHECK for movement");
+failIfTxStatusError(transfer1Tx, transferMessage + " - transfer 0.000001 tokens ac3 -> ac6. CHECK for movement");
+failIfTxStatusError(transfer2Tx, transferMessage + " - approve 0.03 tokens ac4 -> ac5");
+failIfTxStatusError(transfer3Tx, transferMessage + " - transferFrom 0.03 tokens ac4 -> ac7 by ac5. CHECK for movement");
 printControllerContractDetails();
 printLedgerContractDetails();
 printTokenContractDetails();
 console.log("RESULT: ");
 
 
-exit;
-
 // -----------------------------------------------------------------------------
-var stitchReceiversAndSaleMessage = "Stitch Controller, Ledger And Token Contracts";
-var _start = $STARTTIME;
-var _end = $ENDTIME;
-var _cap = web3.toWei(100, "ether");
-var _softcap = web3.toWei(50, "ether");
+var invalidTransferMessage = "Invalid Transfers";
 // -----------------------------------------------------------------------------
-console.log("RESULT: " + stitchReceiversAndSaleMessage);
-var stitchReceiversAndSaleMessage1Tx = receiver0.setSale(saleAddress, {from: contractOwnerAccount, gas: 400000});
-var stitchReceiversAndSaleMessage2Tx = receiver1.setSale(saleAddress, {from: contractOwnerAccount, gas: 400000});
-var stitchReceiversAndSaleMessage3Tx = receiver2.setSale(saleAddress, {from: contractOwnerAccount, gas: 400000});
-var stitchReceiversAndSaleMessage4Tx = sale.setReceivers(receiver0Address, receiver1Address, receiver2Address, 
-  {from: contractOwnerAccount, gas: 400000});
-var stitchReceiversAndSaleMessage5Tx = sale.init(_start, _end, _cap, _softcap, {from: contractOwnerAccount, gas: 400000});
+console.log("RESULT: " + invalidTransferMessage);
+var invalidTransfer1Tx = token.transfer(account7, "100", {from: account5, gas: 100000});
+var invalidTransfer2Tx = token.approve(account8,  "3000000", {from: account6, gas: 100000});
 while (txpool.status.pending > 0) {
 }
-printTxData("stitchReceiversAndSaleMessage1Tx", stitchReceiversAndSaleMessage1Tx);
-printTxData("stitchReceiversAndSaleMessage2Tx", stitchReceiversAndSaleMessage2Tx);
-printTxData("stitchReceiversAndSaleMessage3Tx", stitchReceiversAndSaleMessage3Tx);
-printTxData("stitchReceiversAndSaleMessage4Tx", stitchReceiversAndSaleMessage4Tx);
-printTxData("stitchReceiversAndSaleMessage5Tx", stitchReceiversAndSaleMessage5Tx);
+var invalidTransfer3Tx = token.transferFrom(account6, account9, "3000000", {from: account8, gas: 100000});
+while (txpool.status.pending > 0) {
+}
+printTxData("invalidTransfer1Tx", invalidTransfer1Tx);
+printTxData("invalidTransfer2Tx", invalidTransfer2Tx);
+printTxData("invalidTransfer3Tx", invalidTransfer3Tx);
 printBalances();
-failIfGasEqualsGasUsed(stitchReceiversAndSaleMessage1Tx, stitchReceiversAndSaleMessage + " - receiver0.setSale(sale)");
-failIfGasEqualsGasUsed(stitchReceiversAndSaleMessage2Tx, stitchReceiversAndSaleMessage + " - receiver1.setSale(sale)");
-failIfGasEqualsGasUsed(stitchReceiversAndSaleMessage3Tx, stitchReceiversAndSaleMessage + " - receiver2.setSale(sale)");
-failIfGasEqualsGasUsed(stitchReceiversAndSaleMessage4Tx, stitchReceiversAndSaleMessage + " - sale.setReceivers(receiver*)");
-failIfGasEqualsGasUsed(stitchReceiversAndSaleMessage5Tx, stitchReceiversAndSaleMessage + " - sale.init(*)");
-printReceiverContractDetails(receiver0Address, "Receiver0");
-printReceiverContractDetails(receiver1Address, "Receiver1");
-printReceiverContractDetails(receiver2Address, "Receiver2");
-printSaleContractDetails();
+failIfTxStatusError(invalidTransfer1Tx, invalidTransferMessage + " - invalidTransfer 0.000001 tokens ac3 -> ac6. CHECK for NO movement");
+failIfTxStatusError(invalidTransfer2Tx, invalidTransferMessage + " - approve 0.03 tokens ac4 -> ac5");
+failIfTxStatusError(invalidTransfer3Tx, invalidTransferMessage + " - invalidTransferFrom 0.03 tokens ac4 -> ac7 by ac5. CHECK for NO movement");
+printControllerContractDetails();
+printLedgerContractDetails();
+printTokenContractDetails();
 console.log("RESULT: ");
 
 
 // -----------------------------------------------------------------------------
-// Wait for crowdsale start
+var zeroTransferMessage = "Zero Transfers";
 // -----------------------------------------------------------------------------
-var startTime = sale.start();
-var startTimeDate = new Date(startTime * 1000);
-console.log("RESULT: Waiting until startTime at " + startTime + " " + startTimeDate + " currentDate=" + new Date());
-while ((new Date()).getTime() <= startTimeDate.getTime()) {
-}
-console.log("RESULT: Waited until startTime at " + startTime + " " + startTimeDate + " currentDate=" + new Date());
-
-
-// -----------------------------------------------------------------------------
-var validContribution1Message = "Send Valid Contribution - 40 ETH From Account3, 50 ETH From Account6";
-// -----------------------------------------------------------------------------
-console.log("RESULT: " + validContribution1Message);
-var sendValidContribution1Tx = eth.sendTransaction({from: account3, to: receiver0Address, gas: 400000, value: web3.toWei("40", "ether")});
-var sendValidContribution2Tx = eth.sendTransaction({from: account4, to: receiver1Address, gas: 400000, value: web3.toWei("50", "ether")});
+console.log("RESULT: " + zeroTransferMessage);
+var zeroTransfer1Tx = token.transfer(account7, "0", {from: account5, gas: 100000});
+var zeroTransfer2Tx = token.approve(account8,  "0", {from: account6, gas: 100000});
 while (txpool.status.pending > 0) {
 }
-printTxData("sendValidContribution1Tx", sendValidContribution1Tx);
-printTxData("sendValidContribution2Tx", sendValidContribution2Tx);
+var zeroTransfer3Tx = token.transferFrom(account6, account9, "0", {from: account8, gas: 100000});
+while (txpool.status.pending > 0) {
+}
+printTxData("zeroTransfer1Tx", zeroTransfer1Tx);
+printTxData("zeroTransfer2Tx", zeroTransfer2Tx);
+printTxData("zeroTransfer3Tx", zeroTransfer3Tx);
 printBalances();
-failIfGasEqualsGasUsed(sendValidContribution1Tx, validContribution1Message);
-failIfGasEqualsGasUsed(sendValidContribution2Tx, validContribution1Message);
-printReceiverContractDetails(receiver0Address, "Receiver0");
-printReceiverContractDetails(receiver1Address, "Receiver1");
-printReceiverContractDetails(receiver2Address, "Receiver2");
-printSaleContractDetails();
+failIfTxStatusError(zeroTransfer1Tx, zeroTransferMessage + " - transfer 0 tokens ac3 -> ac6. CHECK for NO movement");
+failIfTxStatusError(zeroTransfer2Tx, zeroTransferMessage + " - approve 0 tokens ac4 -> ac5");
+failIfTxStatusError(zeroTransfer3Tx, zeroTransferMessage + " - zeroTransferFrom 0 tokens ac4 -> ac7 by ac5. CHECK for NO movement");
+printControllerContractDetails();
+printLedgerContractDetails();
+printTokenContractDetails();
 console.log("RESULT: ");
 
-
-// -----------------------------------------------------------------------------
-var validContribution2Message = "Blow The Cap";
-// -----------------------------------------------------------------------------
-console.log("RESULT: " + validContribution2Message);
-var sendValidContribution3Tx = eth.sendTransaction({from: account5, to: receiver0Address, gas: 400000, value: web3.toWei("4000000", "ether")});
-while (txpool.status.pending > 0) {
-}
-printTxData("sendValidContribution3Tx", sendValidContribution3Tx);
-printBalances();
-failIfGasEqualsGasUsed(sendValidContribution3Tx, validContribution2Message);
-printReceiverContractDetails(receiver0Address, "Receiver0");
-printReceiverContractDetails(receiver1Address, "Receiver1");
-printReceiverContractDetails(receiver2Address, "Receiver2");
-printSaleContractDetails();
-console.log("RESULT: ");
-
-
-// -----------------------------------------------------------------------------
-var withdrawSomeMessage = "Withdraw Some";
-// -----------------------------------------------------------------------------
-console.log("RESULT: " + withdrawSomeMessage);
-var withdrawSomeTx = sale.withdrawSome(web3.toWei(123, "ether"), {from: contractOwnerAccount, gas: 400000});
-while (txpool.status.pending > 0) {
-}
-printTxData("withdrawSomeTx", withdrawSomeTx);
-printBalances();
-failIfGasEqualsGasUsed(withdrawSomeTx, withdrawSomeMessage);
-printReceiverContractDetails(receiver0Address, "Receiver0");
-printReceiverContractDetails(receiver1Address, "Receiver1");
-printReceiverContractDetails(receiver2Address, "Receiver2");
-printSaleContractDetails();
-console.log("RESULT: ");
-
-
-// -----------------------------------------------------------------------------
-var withdrawMessage = "Withdraw";
-// -----------------------------------------------------------------------------
-console.log("RESULT: " + withdrawMessage);
-var withdrawTx = sale.withdraw({from: contractOwnerAccount, gas: 400000});
-while (txpool.status.pending > 0) {
-}
-printTxData("withdrawTx", withdrawTx);
-printBalances();
-failIfGasEqualsGasUsed(withdrawTx, withdrawMessage);
-printReceiverContractDetails(receiver0Address, "Receiver0");
-printReceiverContractDetails(receiver1Address, "Receiver1");
-printReceiverContractDetails(receiver2Address, "Receiver2");
-printSaleContractDetails();
-console.log("RESULT: ");
-
-
-exit;
-
-// -----------------------------------------------------------------------------
-var preCommitMessage = "Add PreCommitments - 1000 BET Acc3, 10000 BET Acc4";
-console.log("RESULT: " + preCommitMessage);
-var preCommit1Tx = dct.addPrecommitment(preCommitAccount1, "1000000000000000000000", {from: contractOwnerAccount, gas: 400000});
-var preCommit2Tx = dct.addPrecommitment(preCommitAccount2, "10000000000000000000000", {from: contractOwnerAccount, gas: 400000});
-while (txpool.status.pending > 0) {
-}
-printTxData("preCommit1Tx", preCommit1Tx);
-printTxData("preCommit2Tx", preCommit2Tx);
-printBalances();
-failIfGasEqualsGasUsed(preCommit1Tx, preCommitMessage);
-failIfGasEqualsGasUsed(preCommit2Tx, preCommitMessage);
-printDctContractDetails();
-console.log("RESULT: ");
-
-
-// -----------------------------------------------------------------------------
-// Wait for crowdsale start
-// -----------------------------------------------------------------------------
-var startTime = dct.STARTDATE();
-var startTimeDate = new Date(startTime * 1000);
-console.log("RESULT: Waiting until startTime at " + startTime + " " + startTimeDate +
-  " currentDate=" + new Date());
-while ((new Date()).getTime() <= startTimeDate.getTime()) {
-}
-console.log("RESULT: Waited until startTime at " + startTime + " " + startTimeDate +
-  " currentDate=" + new Date());
-
-
-// -----------------------------------------------------------------------------
-var validContribution1Message = "Send Valid Contribution - 7 ETH From Account5, 14 ETH From Account6";
-console.log("RESULT: " + validContribution1Message);
-var sendValidContribution1Tx = eth.sendTransaction({from: account5, to: dctAddress, gas: 400000, value: web3.toWei("7", "ether")});
-var sendValidContribution2Tx = eth.sendTransaction({from: account6, to: dctAddress, gas: 400000, value: web3.toWei("14", "ether")});
-while (txpool.status.pending > 0) {
-}
-printTxData("sendValidContribution1Tx", sendValidContribution1Tx);
-printTxData("sendValidContribution2Tx", sendValidContribution2Tx);
-printBalances();
-failIfGasEqualsGasUsed(sendValidContribution1Tx, validContribution1Message);
-failIfGasEqualsGasUsed(sendValidContribution2Tx, validContribution1Message);
-printDctContractDetails();
-console.log("RESULT: ");
-
-
-// -----------------------------------------------------------------------------
-var cannotTransferMessage = "Cannot Move Tokens Without Finalisation";
-console.log("RESULT: " + cannotTransferMessage);
-var cannotTransfer1Tx = dct.transfer(account7, "1000000000000", {from: account5, gas: 100000});
-var cannotTransfer2Tx = dct.approve(account8,  "30000000000000000", {from: account6, gas: 100000});
-while (txpool.status.pending > 0) {
-}
-var cannotTransfer3Tx = dct.transferFrom(account6, account8, "30000000000000000", {from: account8, gas: 100000});
-while (txpool.status.pending > 0) {
-}
-printTxData("cannotTransfer1Tx", cannotTransfer1Tx);
-printTxData("cannotTransfer2Tx", cannotTransfer2Tx);
-printTxData("cannotTransfer3Tx", cannotTransfer3Tx);
-printBalances();
-passIfGasEqualsGasUsed(cannotTransfer1Tx, cannotTransferMessage + " - transfer 0.000001 BET ac5 -> ac7. CHECK no movement");
-failIfGasEqualsGasUsed(cannotTransfer2Tx, cannotTransferMessage + " - approve 0.03 BET ac6 -> ac8");
-passIfGasEqualsGasUsed(cannotTransfer3Tx, cannotTransferMessage + " - transferFrom 0.03 BET ac6 -> ac8. CHECK no movement");
-printDctContractDetails();
-console.log("RESULT: ");
-
-
-// -----------------------------------------------------------------------------
-var validContribution2Message = "Send Valid Contribution - 79 ETH From Account5";
-console.log("RESULT: " + validContribution2Message);
-var sendValidContribution3Tx = eth.sendTransaction({from: account5, to: dctAddress, gas: 400000, value: web3.toWei("79", "ether")});
-while (txpool.status.pending > 0) {
-}
-printTxData("sendValidContribution3Tx", sendValidContribution3Tx);
-printBalances();
-failIfGasEqualsGasUsed(sendValidContribution3Tx, validContribution2Message);
-printDctContractDetails();
-console.log("RESULT: ");
-
-
-// -----------------------------------------------------------------------------
-var invalidContribution3Message = "Send Invalid Contribution - 1 ETH From Account7 - Cap Reached";
-console.log("RESULT: " + invalidContribution3Message);
-var sendInvalidContribution1Tx = eth.sendTransaction({from: account7, to: dctAddress, gas: 400000, value: web3.toWei("1", "ether")});
-while (txpool.status.pending > 0) {
-}
-printTxData("sendInvalidContribution1Tx", sendInvalidContribution1Tx);
-printBalances();
-passIfGasEqualsGasUsed(sendInvalidContribution1Tx, invalidContribution3Message);
-printDctContractDetails();
-console.log("RESULT: ");
-
-
-// -----------------------------------------------------------------------------
-var canTransferMessage = "Can Move Tokens After Cap Reached";
-console.log("RESULT: " + canTransferMessage);
-var canTransfer1Tx = dct.transfer(account7, "1000000000000", {from: account5, gas: 100000});
-var canTransfer2Tx = dct.approve(account8,  "30000000000000000", {from: account6, gas: 100000});
-while (txpool.status.pending > 0) {
-}
-var canTransfer3Tx = dct.transferFrom(account6, account8, "30000000000000000", {from: account8, gas: 100000});
-while (txpool.status.pending > 0) {
-}
-printTxData("canTransfer1Tx", canTransfer1Tx);
-printTxData("canTransfer2Tx", canTransfer2Tx);
-printTxData("canTransfer3Tx", canTransfer3Tx);
-printBalances();
-failIfGasEqualsGasUsed(canTransfer1Tx, canTransferMessage + " - transfer 0.000001 BET ac5 -> ac7. CHECK for movement");
-failIfGasEqualsGasUsed(canTransfer2Tx, canTransferMessage + " - approve 0.03 BET ac6 -> ac8");
-failIfGasEqualsGasUsed(canTransfer3Tx, canTransferMessage + " - transferFrom 0.03 BET ac6 -> ac8. CHECK for movement");
-printDctContractDetails();
-console.log("RESULT: ");
 
 EOF
 grep "DATA: " $TEST1OUTPUT | sed "s/DATA: //" > $DEPLOYMENTDATA

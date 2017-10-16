@@ -17,7 +17,7 @@
 # Requirements
 
 * The tests works on OS/X. Should work in Linux. May work in Windows with Cygwin
-* Geth/v1.7.0-stable-6c6c7b2a/darwin-amd64/go1.7.1
+* Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9 running with the Byzantium fork switched on
 * Solc 0.4.16+commit.d7661dd9.Darwin.appleclang
 
 <br />
@@ -42,7 +42,7 @@
 
 # Notes
 
-* The tests were conducted using bash shell scripts running Geth/v1.7.0-stable-6c6c7b2a/darwin-amd64/go1.7.1 JavaScript commands
+* The tests were conducted using bash shell scripts running Geth/v1.7.2-stable-1db4ecdc/darwin-amd64/go1.9 JavaScript commands
 * The smart contracts were compiled using Solidity 0.4.16+commit.d7661dd9.Darwin.appleclang
 * The test script can be found in [01_test1.sh](01_test1.sh)
 * The test results can be found in [test1results.txt](test1results.txt) with details in [test1output.txt](test1output.txt)
