@@ -189,19 +189,19 @@ contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Paus
 
     // functions below this line are public
 
-    // BK Ok
+    // BK Ok - Constant function
     function balanceOf(address a) constant returns (uint) {
         // BK Ok
         return controller.balanceOf(a);
     }
 
-    // BK Ok
+    // BK Ok - Constant function
     function totalSupply() constant returns (uint) {
         // BK Ok
         return controller.totalSupply();
     }
 
-    // BK Ok
+    // BK Ok - Constant function
     function allowance(address _owner, address _spender) constant returns (uint) {
         // BK Ok
         return controller.allowance(_owner, _spender);
@@ -240,32 +240,49 @@ contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Paus
     }
 
     // BK NOTE - There is a payload size check with >=
+    // BK Ok
     function approve(address _spender, uint _value) onlyPayloadSize(2) notPaused returns (bool success) {
         // promote safe user behavior
+        // BK Ok
         if (controller.approve(msg.sender, _spender, _value)) {
+            // BK Ok - Log event
             Approval(msg.sender, _spender, _value);
+            // BK Ok
             return true;
         }
+        // BK Ok
         return false;
     }
 
     // BK NOTE - There is a payload size check with >=
+    // BK Ok
     function increaseApproval (address _spender, uint _addedValue) onlyPayloadSize(2) notPaused returns (bool success) {
+        // BK Ok
         if (controller.increaseApproval(msg.sender, _spender, _addedValue)) {
+            // BK Ok
             uint newval = controller.allowance(msg.sender, _spender);
+            // BK Ok - Log event
             Approval(msg.sender, _spender, newval);
+            // BK Ok
             return true;
         }
+        // BK Ok
         return false;
     }
 
     // BK NOTE - There is a payload size check with >=
+    // BK Ok
     function decreaseApproval (address _spender, uint _subtractedValue) onlyPayloadSize(2) notPaused returns (bool success) {
+        // BK Ok
         if (controller.decreaseApproval(msg.sender, _spender, _subtractedValue)) {
+            // BK Ok
             uint newval = controller.allowance(msg.sender, _spender);
+            // BK Ok - Log event
             Approval(msg.sender, _spender, newval);
+            // BK Ok
             return true;
         }
+        // BK Ok
         return false;
     }
 
@@ -313,6 +330,7 @@ contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Paus
     }
 }
 
+// BK Ok
 contract Controller is Owned, Finalizable {
     // BK Ok
     Ledger public ledger;
@@ -378,7 +396,9 @@ contract Controller is Owned, Finalizable {
     // let the ledger send transfer events (the most obvious case
     // is when we mint directly to the ledger and need the Transfer()
     // events to appear in the token)
+    // BK Ok - Only the ledger can execute this function. Used for minting
     function ledgerTransfer(address from, address to, uint val) onlyLedger {
+        // BK Ok
         token.controllerTransfer(from, to, val);
     }
 
@@ -396,15 +416,21 @@ contract Controller is Owned, Finalizable {
         return ledger.transferFrom(_spender, _from, _to, _value);
     }
 
+    // BK Ok - Only token contract can execute this function
     function approve(address _owner, address _spender, uint _value) onlyToken returns (bool success) {
+        // BK Ok
         return ledger.approve(_owner, _spender, _value);
     }
 
+    // BK Ok - Only token contract can execute this function
     function increaseApproval (address _owner, address _spender, uint _addedValue) onlyToken returns (bool success) {
+        // BK Ok
         return ledger.increaseApproval(_owner, _spender, _addedValue);
     }
 
+    // BK Ok - Only token contract can execute this function
     function decreaseApproval (address _owner, address _spender, uint _subtractedValue) onlyToken returns (bool success) {
+        // BK Ok
         return ledger.decreaseApproval(_owner, _spender, _subtractedValue);
     }
 
@@ -438,23 +464,38 @@ contract Ledger is Owned, SafeMath, Finalizable {
         controller = Controller(_controller);
     }
 
+    // BK Ok - Only owner can execute
     function stopMinting() onlyOwner {
+        // BK Ok
         mintingStopped = true;
     }
 
+    // BK Ok - Only owner can execute
     function multiMint(uint nonce, uint256[] bits) onlyOwner {
+        // BK Ok
         require(!mintingStopped);
+        // BK Ok
         if (nonce != mintingNonce) return;
+        // BK Ok
         mintingNonce += 1;
+        // BK Ok
         uint256 lomask = (1 << 96) - 1;
+        // BK Ok
         uint created = 0;
+        // BK Ok
         for (uint i=0; i<bits.length; i++) {
+            // BK Ok
             address a = address(bits[i]>>96);
+            // BK Ok
             uint value = bits[i]&lomask;
+            // BK Ok
             balanceOf[a] = balanceOf[a] + value;
+            // BK Ok
             controller.ledgerTransfer(0, a, value);
+            // BK Ok
             created += value;
         }
+        // BK Ok
         totalSupply += created;
     }
 
@@ -488,37 +529,58 @@ contract Ledger is Owned, SafeMath, Finalizable {
 
         // BK Ok
         var allowed = allowance[_from][_spender];
+        // BK Ok
         if (allowed < _value) return false;
 
+        // BK Ok
         balanceOf[_to] = safeAdd(balanceOf[_to], _value);
+        // BK Ok
         balanceOf[_from] = safeSub(balanceOf[_from], _value);
+        // BK OK
         allowance[_from][_spender] = safeSub(allowed, _value);
+        // BK Ok
         return true;
     }
 
+    // BK Ok - Only controller can execute this function
     function approve(address _owner, address _spender, uint _value) onlyController returns (bool success) {
         // require user to set to zero before resetting to nonzero
+        // BK Ok
         if ((_value != 0) && (allowance[_owner][_spender] != 0)) {
+            // BK Ok
             return false;
         }
 
+        // BK Ok
         allowance[_owner][_spender] = _value;
+        // BK Ok
         return true;
     }
 
+    // BK Ok - Only controller can execute this function
     function increaseApproval (address _owner, address _spender, uint _addedValue) onlyController returns (bool success) {
+        // BK Ok
         uint oldValue = allowance[_owner][_spender];
+        // BK Ok
         allowance[_owner][_spender] = safeAdd(oldValue, _addedValue);
+        // BK Ok
         return true;
     }
 
+    // BK Ok - Only controller can execute this function
     function decreaseApproval (address _owner, address _spender, uint _subtractedValue) onlyController returns (bool success) {
+        // BK Ok
         uint oldValue = allowance[_owner][_spender];
+        // BK Ok
         if (_subtractedValue > oldValue) {
+            // BK Ok
             allowance[_owner][_spender] = 0;
+        // BK Ok
         } else {
+            // BK Ok
             allowance[_owner][_spender] = safeSub(oldValue, _subtractedValue);
         }
+        // BK Ok
         return true;
     }
 

@@ -30,6 +30,12 @@ Note that the Ledger, Controller and Token contracts are included in each of the
 * [Notes](#notes)
 * [Testing](#testing)
 * [Code Review](#code-review)
+  * [Check On Calls And Permissions](#check-on-calls-and-permissions)
+    * [General Functions](#general-functions)
+    * [Token Specific Functions](#token-specific-functions)
+    * [Controller Specific Functions](#controller-specific-functions)
+    * [Ledger Specific Functions](#ledger-specific-functions)
+    * [Transfer And Other Functions That Can Be Called By Any Account](#transfer-and-other-functions-that-can-be-called-by-any-account)
 
 <br />
 
@@ -56,7 +62,7 @@ Note that the Ledger, Controller and Token contracts are included in each of the
 
 ## Code Review
 
-* [ ] [code-review/Token.md](code-review/Token.md)
+* [x] [code-review/Token.md](code-review/Token.md)
   * [x] contract SafeMath 
   * [x] contract Owned 
   * [x] contract Pausable is Owned 
@@ -64,7 +70,77 @@ Note that the Ledger, Controller and Token contracts are included in each of the
   * [x] contract IToken 
   * [x] contract TokenReceivable is Owned 
   * [x] contract EventDefinitions 
-  * [ ] contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Pausable 
-  * [ ] contract Controller is Owned, Finalizable 
-  * [ ] contract Ledger is Owned, SafeMath, Finalizable 
+  * [x] contract Token is Finalizable, TokenReceivable, SafeMath, EventDefinitions, Pausable 
+  * [x] contract Controller is Owned, Finalizable 
+  * [x] contract Ledger is Owned, SafeMath, Finalizable 
+
+<br />
+
+### Check On Calls And Permissions
+
+This section looks across the permissions required to execute the non-constant functions in these set of contracts.
+
+#### General Functions
+
+All three main contracts *Token*, *Controller* and *Ledger* are derived from *Finalizable* which is derived from Owned. They all implement
+`Finalizable.finalize()` that can only be called by the **owner**. They also implement `Owned.changeOwner(...)` that can only be called by
+**owner**, and `Owned.acceptOwnership()` that can only be called by the new intended owner.
+
+<br />
+
+#### Token Specific Functions
+
+* [x] *Token* additionally is derived from *TokenReceivable* that implements `TokenReceivable.claimTokens(...)` and this can only be called **owner**
+
+* [x] `Token.setController(...)` can only be called by **owner**
+
+* [x] `Token.controllerApprove(...)` can only be called by *Controller*. As *Controller* does not have any functions to call
+  `Token.controllerApprove(...)`, this function is redundant
+
+<br />
+
+#### Controller Specific Functions
+
+* [x] *Controller* has a `Controller.setToken(...)` and `Controller.setLedger(...)` that can only be called by **owner**
+
+<br />
+
+#### Ledger Specific Functions
+
+* [x] `Ledger.multiMint(...)` can only be called by **owner**
+  * [x] -> `Contoller.ledgerTransfer(...)` that can only be called by *Ledger*
+    * [x] -> `Token.controllerTransfer(...)` that can only be called by *Controller*
+
+* [x] *Ledger* has a `Ledger.setController(...)` and a `Ledger.stopMinting(...)` that can only be called by **owner**
+
+<br />
+
+#### Transfer And Other Functions That Can Be Called By Any Account
+
+Following are the *Token* functions that can be executed by **any account**
+
+* [x] `Token.transfer(...)`
+  * [x] -> `Controller.transfer(...)` that can only be called by *Token*
+    * [x] -> `Ledger.transfer(...)` that can only be called by Controller
+
+* [x] `Token.transferFrom(...)`
+  * [x] -> `Controller.transferFrom(...)` that can only be called by *Token*
+    * [x] -> `Ledger.transferFrom(...)` that can only be called by Controller
+
+* [x] Token.approve(...)
+  * [x] -> `Controller.approve(...)` that can only be called by *Token*
+    * [x] -> `Ledger.approve(...)` that can only be called by Controller
+
+* [x] `Token.increaseApproval(...)`
+  * [x] -> `Controller.increaseApproval(...)` that can only be called by *Token*
+    * [x] -> `Ledger.increaseApproval(...)` that can only be called by Controller
+
+* [x] `Token.decreaseApproval(...)`
+  * [x] -> `Controller.decreaseApproval(...)` that can only be called by *Token*
+    * [x] -> `Ledger.decreaseApproval(...)` that can only be called by Controller
+
+* [x] `Token.burn(...)`
+  * [x] -> `Controller.burn(...)` that can only be called by *Token*
+    * [x] -> `Ledger.burn(...)` that can only be called by Controller
+
 
